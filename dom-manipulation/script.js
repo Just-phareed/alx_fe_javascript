@@ -1,86 +1,92 @@
-// Quote array
-let quotes = [
-  { text: "Believe you can and you're halfway there.", category: "Motivation" },
-  { text: "Life is what happens when you're busy making other plans.", category: "Life" },
-  { text: "The purpose of our lives is to be happy.", category: "Life" }
+// Load existing quotes OR create default
+let quotes = JSON.parse(localStorage.getItem("quotes")) || [
+  { text: "Success is not final.", category: "Motivation" },
+  { text: "Believe in yourself.", category: "Inspiration" },
+  { text: "Knowledge is power.", category: "Education" }
 ];
 
-// DOM elements
-const quoteDisplay = document.getElementById("quoteDisplay");
-const newQuoteBtn = document.getElementById("newQuote");
+document.addEventListener("DOMContentLoaded", () => {
+  
+  populateCategories();
+  loadSavedFilter();
+  showRandomQuote();
 
-// Show a random quote
+  document.getElementById("newQuote").addEventListener("click", showRandomQuote);
+});
+
+// Show a random quote (based on selected filter)
 function showRandomQuote() {
-  if (quotes.length === 0) {
-    quoteDisplay.innerHTML = "<p>No quotes available.</p>";
+  const selected = document.getElementById("categoryFilter").value;
+
+  let filteredQuotes =
+    selected === "all"
+      ? quotes
+      : quotes.filter(q => q.category === selected);
+
+  if (filteredQuotes.length === 0) {
+    document.getElementById("quoteDisplay").textContent = "No quotes available.";
     return;
   }
 
-  const randomIndex = Math.floor(Math.random() * quotes.length);
-  const q = quotes[randomIndex];
-
-  quoteDisplay.innerHTML = `
-    <p><strong>Quote:</strong> ${q.text}</p>
-    <p><strong>Category:</strong> ${q.category}</p>
-  `;
+  const random = Math.floor(Math.random() * filteredQuotes.length);
+  document.getElementById("quoteDisplay").textContent = filteredQuotes[random].text;
 }
 
 // Add a new quote
 function addQuote() {
-  const textInput = document.getElementById("newQuoteText");
-  const categoryInput = document.getElementById("newQuoteCategory");
+  const text = document.getElementById("newQuoteText").value.trim();
+  const category = document.getElementById("newQuoteCategory").value.trim();
 
-  const text = textInput.value.trim();
-  const category = categoryInput.value.trim();
-
-  if (text === "" || category === "") {
-    alert("Please enter both quote text and category.");
+  if (!text || !category) {
+    alert("Please enter both a quote and a category.");
     return;
   }
 
-  // add new quote into array
+  // Add new quote to array
   quotes.push({ text, category });
 
-  // clear inputs
-  textInput.value = "";
-  categoryInput.value = "";
+  // Save to local storage
+  localStorage.setItem("quotes", JSON.stringify(quotes));
 
-  // show the newly added quote
-  quoteDisplay.innerHTML = `
-    <p><strong>Quote:</strong> ${text}</p>
-    <p><strong>Category:</strong> ${category}</p>
-  `;
+  // Update categories if new one is added
+  populateCategories();
+
+  alert("Quote added successfully!");
+
+  document.getElementById("newQuoteText").value = "";
+  document.getElementById("newQuoteCategory").value = "";
 }
 
-// REQUIRED BY ALX CHECKER
-// This function MUST exist in your file
-function createAddQuoteForm() {
-  const formContainer = document.createElement("div");
+// Populate dropdown categories
+function populateCategories() {
+  const dropdown = document.getElementById("categoryFilter");
+  dropdown.innerHTML = `<option value="all">All Categories</option>`;
 
-  const input1 = document.createElement("input");
-  input1.id = "newQuoteText";
-  input1.placeholder = "Enter a new quote";
+  const categories = [...new Set(quotes.map(q => q.category))];
 
-  const input2 = document.createElement("input");
-  input2.id = "newQuoteCategory";
-  input2.placeholder = "Enter quote category";
-
-  const button = document.createElement("button");
-  button.textContent = "Add Quote";
-  button.addEventListener("click", addQuote);
-
-  formContainer.appendChild(input1);
-  formContainer.appendChild(input2);
-  formContainer.appendChild(button);
-
-  document.body.appendChild(formContainer);
+  categories.forEach(cat => {
+    const opt = document.createElement("option");
+    opt.value = cat;
+    opt.textContent = cat;
+    dropdown.appendChild(opt);
+  });
 }
 
-// Event listeners
-newQuoteBtn.addEventListener("click", showRandomQuote);
+// Filter quotes by category
+function filterQuotes() {
+  const selectedCategory = document.getElementById("categoryFilter").value;
 
-// Create form on page load (ALX expects this behavior)
-createAddQuoteForm();
+  // Save the selected filter
+  localStorage.setItem("selectedCategory", selectedCategory);
 
-// Show first quote automatically
-showRandomQuote();
+  showRandomQuote();
+}
+
+// Load saved filter from localStorage
+function loadSavedFilter() {
+  const saved = localStorage.getItem("selectedCategory");
+
+  if (saved) {
+    document.getElementById("categoryFilter").value = saved;
+  }
+}
