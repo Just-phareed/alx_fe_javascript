@@ -28,13 +28,15 @@ function showRandomQuote() {
       ? quotes
       : quotes.filter(q => q.category === selected);
 
+  const display = document.getElementById("quoteDisplay");
+
   if (filteredQuotes.length === 0) {
-    document.getElementById("quoteDisplay").textContent = "No quotes found.";
+    display.textContent = "No quotes found.";
     return;
   }
 
   const random = Math.floor(Math.random() * filteredQuotes.length);
-  document.getElementById("quoteDisplay").textContent = filteredQuotes[random].text;
+  display.textContent = filteredQuotes[random].text;
 }
 
 // Add a new quote
@@ -48,10 +50,10 @@ function addQuote() {
   }
 
   quotes.push({ text, category });
-
   localStorage.setItem("quotes", JSON.stringify(quotes));
 
   populateCategories();
+  showRandomQuote();
 
   console.log("Quote added to local storage.");
 
@@ -65,7 +67,6 @@ function populateCategories() {
   dropdown.innerHTML = `<option value="all">All Categories</option>`;
 
   const categories = [...new Set(quotes.map(q => q.category))];
-
   categories.forEach(cat => {
     const opt = document.createElement("option");
     opt.value = cat;
@@ -77,9 +78,7 @@ function populateCategories() {
 // Category filter
 function filterQuotes() {
   const selected = document.getElementById("categoryFilter").value;
-
   localStorage.setItem("selectedCategory", selected);
-
   showRandomQuote();
 }
 
@@ -95,10 +94,21 @@ function loadSavedFilter() {
 //   SERVER SYNC + CONFLICT FIX
 // ===============================
 
+// Notify user
+function notifyUser(message) {
+  const notification = document.createElement("div");
+  notification.textContent = message;
+  notification.className = "notification";
+  document.body.appendChild(notification);
+  setTimeout(() => notification.remove(), 3000);
+}
+
 // Sync with mock server
 async function syncWithServer() {
   try {
     const response = await fetch("https://jsonplaceholder.typicode.com/posts");
+    if (!response.ok) throw new Error("Network response was not ok");
+
     const serverData = await response.json();
 
     // Convert to expected quote format
@@ -107,8 +117,12 @@ async function syncWithServer() {
       category: "Server"
     }));
 
-    // Conflict Resolution: SERVER WINS
-    quotes = serverQuotes;
+    // Conflict Resolution: MERGE (server wins on duplicates)
+    const mergedQuotes = [
+      ...quotes.filter(q => !serverQuotes.some(sq => sq.text === q.text)),
+      ...serverQuotes
+    ];
+    quotes = mergedQuotes;
 
     // Save updated data
     localStorage.setItem("quotes", JSON.stringify(quotes));
@@ -117,9 +131,10 @@ async function syncWithServer() {
     populateCategories();
     showRandomQuote();
 
-    console.log("Quotes updated from server (server wins).");
-
+    console.log("Quotes synced with server.");
+    notifyUser("Quotes updated from server!");
   } catch (error) {
     console.error("Error syncing with server:", error);
+    notifyUser("Failed to sync with server.");
   }
 }
