@@ -6,15 +6,20 @@ let quotes = JSON.parse(localStorage.getItem("quotes")) || [
 ];
 
 document.addEventListener("DOMContentLoaded", () => {
-  
   populateCategories();
   loadSavedFilter();
   showRandomQuote();
 
   document.getElementById("newQuote").addEventListener("click", showRandomQuote);
+
+  const syncBtn = document.getElementById("syncBtn");
+  if (syncBtn) syncBtn.addEventListener("click", syncWithServer);
+
+  // Auto-sync every 10 seconds
+  setInterval(syncWithServer, 10000);
 });
 
-// Show a random quote (based on selected filter)
+// Show random quote
 function showRandomQuote() {
   const selected = document.getElementById("categoryFilter").value;
 
@@ -24,7 +29,7 @@ function showRandomQuote() {
       : quotes.filter(q => q.category === selected);
 
   if (filteredQuotes.length === 0) {
-    document.getElementById("quoteDisplay").textContent = "No quotes available.";
+    document.getElementById("quoteDisplay").textContent = "No quotes found.";
     return;
   }
 
@@ -38,26 +43,23 @@ function addQuote() {
   const category = document.getElementById("newQuoteCategory").value.trim();
 
   if (!text || !category) {
-    alert("Please enter both a quote and a category.");
+    alert("Enter both quote and category.");
     return;
   }
 
-  // Add new quote to array
   quotes.push({ text, category });
 
-  // Save to local storage
   localStorage.setItem("quotes", JSON.stringify(quotes));
 
-  // Update categories if new one is added
   populateCategories();
 
-  alert("Quote added successfully!");
+  console.log("Quote added to local storage.");
 
   document.getElementById("newQuoteText").value = "";
   document.getElementById("newQuoteCategory").value = "";
 }
 
-// Populate dropdown categories
+// Populate categories
 function populateCategories() {
   const dropdown = document.getElementById("categoryFilter");
   dropdown.innerHTML = `<option value="all">All Categories</option>`;
@@ -72,21 +74,52 @@ function populateCategories() {
   });
 }
 
-// Filter quotes by category
+// Category filter
 function filterQuotes() {
-  const selectedCategory = document.getElementById("categoryFilter").value;
+  const selected = document.getElementById("categoryFilter").value;
 
-  // Save the selected filter
-  localStorage.setItem("selectedCategory", selectedCategory);
+  localStorage.setItem("selectedCategory", selected);
 
   showRandomQuote();
 }
 
-// Load saved filter from localStorage
+// Load saved filter
 function loadSavedFilter() {
   const saved = localStorage.getItem("selectedCategory");
-
   if (saved) {
     document.getElementById("categoryFilter").value = saved;
+  }
+}
+
+// ===============================
+//   SERVER SYNC + CONFLICT FIX
+// ===============================
+
+// Sync with mock server
+async function syncWithServer() {
+  try {
+    const response = await fetch("https://jsonplaceholder.typicode.com/posts");
+    const serverData = await response.json();
+
+    // Convert to expected quote format
+    const serverQuotes = serverData.slice(0, 5).map(item => ({
+      text: item.title,
+      category: "Server"
+    }));
+
+    // Conflict Resolution: SERVER WINS
+    quotes = serverQuotes;
+
+    // Save updated data
+    localStorage.setItem("quotes", JSON.stringify(quotes));
+
+    // Update UI
+    populateCategories();
+    showRandomQuote();
+
+    console.log("Quotes updated from server (server wins).");
+
+  } catch (error) {
+    console.error("Error syncing with server:", error);
   }
 }
