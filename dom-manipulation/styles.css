@@ -1,0 +1,17 @@
+body {
+  font-family: Arial, sans-serif;
+  padding: 24px;
+  max-width: 900px;
+  margin: auto;
+  background: #f7f7f7;
+}
+h1 { margin-bottom: 12px; }
+#quoteDisplay {
+  background: #fff;
+  padding: 16px;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.08);
+  margin-bottom: 12px;
+}
+input { padding: 8px; margin-right: 8px; margin-top: 8px; }
+button { padding: 8px 12px; margin-top: 8px; cursor: pointer; }
