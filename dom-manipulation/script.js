@@ -85,7 +85,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (serverQuotes.length > 0) {
       quotes = serverQuotes; // SERVER WINS
       saveQuotes();
-      notifyUser("Quotes synced from server. Conflicts resolved.");
+      notifyUsernotifyUser("Quotes synced with server!");
     }
   }
 
